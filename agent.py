@@ -1,12 +1,12 @@
 import os
 from dotenv import load_dotenv
-import openai
+from openai import OpenAI
 
 # Load environment variables
 load_dotenv()
 
-# Configure OpenAI
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Initialize OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def search(query: str) -> str:
     """Search for information about a topic."""
@@ -35,9 +35,9 @@ def get_tool_response(tool_name: str, tool_input: str) -> str:
 def run_agent(query: str) -> str:
     """Run the agent with a query."""
     try:
-        # Create a chat completion
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+        # Create a chat completion using the new API structure
+        response = client.chat.completions.create(
+            model="gpt-4",  # Using GPT-4 model
             messages=[
                 {"role": "system", "content": """You are a helpful AI assistant that can use tools to answer questions.
 Available tools:
@@ -69,8 +69,8 @@ FINAL ANSWER: <your answer>"""},
             tool_response = get_tool_response(tool_name, tool_input)
 
             # Get final answer with tool response
-            final_response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+            final_response = client.chat.completions.create(
+                model="gpt-4",  # Using GPT-4 model
                 messages=[
                     {"role": "system", "content": "You are a helpful AI assistant. Provide a clear and concise final answer based on the tool's response."},
                     {"role": "user", "content": f"Tool response: {tool_response}\nWhat is the final answer?"}
