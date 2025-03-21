@@ -87,11 +87,18 @@ FINAL ANSWER: <your answer>"""},
 
 if __name__ == "__main__":
     print("Testing the agent...")
+    print("Using OpenAI API key:", os.getenv("OPENAI_API_KEY")[:10] + "...")
     
-    print("\nTesting search functionality:")
-    result = run_agent("What is the capital of France?")
-    print(f"Result: {result}")
-    
-    print("\nTesting calculator functionality:")
-    result = run_agent("What is 2 + 2?")
-    print(f"Result: {result}")
+    try:
+        print("\nTesting search functionality:")
+        result = run_agent("What is the capital of France?")
+        print(f"Result: {result}")
+        
+        print("\nTesting calculator functionality:")
+        result = run_agent("What is 2 + 2?")
+        print(f"Result: {result}")
+    except Exception as e:
+        print(f"Test failed with error: {str(e)}")
+        import traceback
+        print("Full error:")
+        print(traceback.format_exc())
