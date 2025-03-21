@@ -37,7 +37,7 @@ def run_agent(query: str) -> str:
     try:
         # Create a chat completion using the new API structure
         response = client.chat.completions.create(
-            model="gpt-4",  # Using GPT-4 model
+            model="gpt-4o-mini",  # Using GPT-4o Mini model - faster and more cost-effective
             messages=[
                 {"role": "system", "content": """You are a helpful AI assistant that can use tools to answer questions.
 Available tools:
@@ -70,7 +70,7 @@ FINAL ANSWER: <your answer>"""},
 
             # Get final answer with tool response
             final_response = client.chat.completions.create(
-                model="gpt-4",  # Using GPT-4 model
+                model="gpt-4o-mini",  # Using GPT-4o Mini model - faster and more cost-effective
                 messages=[
                     {"role": "system", "content": "You are a helpful AI assistant. Provide a clear and concise final answer based on the tool's response."},
                     {"role": "user", "content": f"Tool response: {tool_response}\nWhat is the final answer?"}
