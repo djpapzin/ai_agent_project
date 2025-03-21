@@ -1,6 +1,9 @@
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
+from duckduckgo_search import DDGS
+import requests
+from datetime import datetime
 
 # Load environment variables
 load_dotenv()
@@ -9,13 +12,47 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def search(query: str) -> str:
-    """Search for information about a topic."""
-    query = query.lower()
-    if any(phrase in query for phrase in ["capital of france", "france capital", "paris france"]):
-        return "Found information: Paris is the capital of France"
-    elif "capital" in query:
-        return "I can only tell you about the capital of France at the moment."
-    return f"No specific information found for: {query}"
+    """Enhanced search function using DuckDuckGo."""
+    try:
+        # First try DuckDuckGo search
+        with DDGS() as ddgs:
+            results = list(ddgs.text(query, max_results=3))
+            if results:
+                formatted_results = "\n".join([
+                    f"- {result['title']}: {result['link']}\n  {result['body']}"
+                    for result in results
+                ])
+                return f"Found information:\n{formatted_results}"
+            return f"No results found for: {query}"
+    except Exception as e:
+        return f"Search error: {str(e)}"
+
+def get_weather(location: str) -> str:
+    """Get weather information for a location using OpenWeatherMap."""
+    try:
+        # You would need to sign up for a free API key at OpenWeatherMap
+        api_key = os.getenv("OPENWEATHER_API_KEY")
+        if not api_key:
+            return "Weather API key not configured. Please set OPENWEATHER_API_KEY in your .env file."
+        
+        # Make API request
+        url = f"http://api.openweathermap.org/data/2.5/weather?q={location}&appid={api_key}&units=imperial"
+        response = requests.get(url)
+        data = response.json()
+        
+        if response.status_code == 200:
+            # Format the response
+            weather_info = f"Weather in {location}:\n"
+            weather_info += f"Temperature: {data['main']['temp']}°F\n"
+            weather_info += f"Feels like: {data['main']['feels_like']}°F\n"
+            weather_info += f"Conditions: {data['weather'][0]['description']}\n"
+            weather_info += f"Humidity: {data['main']['humidity']}%\n"
+            weather_info += f"Wind speed: {data['wind']['speed']} mph"
+            return weather_info
+        else:
+            return f"Could not get weather for {location}. Error: {data.get('message', 'Unknown error')}"
+    except Exception as e:
+        return f"Weather error: {str(e)}"
 
 def calculator(expression: str) -> str:
     """Calculate a mathematical expression."""
@@ -28,7 +65,8 @@ def get_tool_response(tool_name: str, tool_input: str) -> str:
     """Get response from a specific tool."""
     tools = {
         "search": search,
-        "calculator": calculator
+        "calculator": calculator,
+        "weather": get_weather
     }
     return tools[tool_name](tool_input)
 
@@ -41,8 +79,9 @@ def run_agent(query: str) -> str:
             messages=[
                 {"role": "system", "content": """You are a helpful AI assistant that can use tools to answer questions.
 Available tools:
-- search: Search for information about topics (currently only knows about France's capital)
+- search: Search for information about any topic using DuckDuckGo
 - calculator: Perform mathematical calculations
+- weather: Get current weather for any location (requires OpenWeather API key)
 
 To use a tool, respond in the format:
 TOOL: <tool_name>
@@ -86,16 +125,20 @@ FINAL ANSWER: <your answer>"""},
         return f"Error: {str(e)}"
 
 if __name__ == "__main__":
-    print("Testing the agent...")
+    print("Testing the enhanced agent...")
     print("Using OpenAI API key:", os.getenv("OPENAI_API_KEY")[:10] + "...")
     
     try:
-        print("\nTesting search functionality:")
-        result = run_agent("What is the capital of France?")
+        print("\nTesting enhanced search functionality:")
+        result = run_agent("What is the population of Tokyo?")
+        print(f"Result: {result}")
+        
+        print("\nTesting weather functionality:")
+        result = run_agent("What's the weather like in New York?")
         print(f"Result: {result}")
         
         print("\nTesting calculator functionality:")
-        result = run_agent("What is 2 + 2?")
+        result = run_agent("What is 25 * 48?")
         print(f"Result: {result}")
     except Exception as e:
         print(f"Test failed with error: {str(e)}")
